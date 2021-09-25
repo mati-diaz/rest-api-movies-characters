@@ -1,33 +1,104 @@
+const { Movie, Character } = require("../models");
 
+// Crear Pelicula
+const createMovie = async (req, res) => {
+    const { charactersId, ...rest } = req.body;
 
-const getMovies = (req, res) => {
+    const movie = Movie.build(rest);
+
+    await movie.save();
+
+    if(charactersId) {
+        charactersId.forEach(async (characterId) => {
+            const character = await Character.findOne({ where: { id: characterId } });
+            if(character) {
+                await movie.addCharacter(character);
+            }
+        });
+    }
+
+    res.json(movie);
+}
+
+// Obtener Peliculas
+const getMovies = async (req, res) => {
+    let movies = await Movie.findAll();
+
+    movies = movies.map(movie => {
+        return {
+            image: movie.image,
+            title: movie.title,
+            releaseDate: movie.releaseDate
+        }
+    });
+
+    res.json(movies);
+}
+
+// Obtener una pelicula por su ID
+const getMovieById = async (req, res) => {
+    const { id } = req.params;
+
+    const movie = await Movie.findOne({ where: { id } });
+
+    if(!movie) {
+        return res.status(400).json({
+            msg: 'Movie not found'
+        });
+    }
+
+    const characters = await movie.getCharacters();
+
     res.json({
-        msg: 'Obtaining Movies...'
+        movie,
+        characters
     });
 }
 
-const getMovieById = (req, res) => {
-    res.json({
-        msg: 'Obtaining Movie...'
-    });
+
+// Actualizar Pelicula
+const updateMovie = async (req, res) => {
+    const { id } = req.params;
+    const { charactersId, ...rest } = req.body;
+
+    const movie = await Movie.findOne({ where: { id } });
+
+    if(!movie) {
+        return res.status(400).json({
+            msg: 'Movie not found'
+        });
+    }
+
+    await movie.update(rest);
+
+    if(charactersId) {
+        await movie.setCharacters([]);
+        charactersId.forEach(async (characterId) => {
+            const character = await Character.findOne({ where: { id: characterId } });
+            if (character) {
+                await movie.addCharacters(character);
+            }
+        });
+    }
+
+    res.json(movie);
 }
 
-const createMovie = (req, res) => {
-    res.json({
-        msg: 'Creating Movie...'
-    });
-}
+// Eliminar Pelicula
+const deleteMovie = async (req, res) => {
+    const { id } = req.params;
 
-const updateMovie = (req, res) => {
-    res.json({
-        msg: 'Updating Movie...'
-    });
-}
+    const movie = await Movie.findOne({ where: { id } });
 
-const deleteMovie = (req, res) => {
-    res.json({
-        msg: 'Deleting Movie...'
-    });
+    if(!movie) {
+        return res.status(400).json({
+            msg: 'Movie not found'
+        });
+    }
+
+    await movie.destroy();
+
+    res.json(movie);
 }
 
 module.exports = {

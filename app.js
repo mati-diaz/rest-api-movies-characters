@@ -9,6 +9,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const paths = {
     auth: '/api/auth',
+    search: '/api/search',
     movies: '/api/movies',
     characters: '/api/characters',
 }
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use(paths.auth, require('./routes/auth.routes'));
 app.use(paths.movies, require('./routes/movies.routes'));
 app.use(paths.characters, require('./routes/characters.routes'));
+app.use(paths.search, require('./routes/search.routes'));
 
 app.listen(port, () => {
     console.log(`App in port ${port}`);
